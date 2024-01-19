@@ -12,6 +12,7 @@ services:
       - "8000:8000"
     volumes:
       - ./app:/app
+      - dev-static-data:/vol/web
     command: >
       sh -c "python manage.py wait_for_db && 
             python manage.py migrate &&
@@ -21,6 +22,7 @@ services:
       - DB_NAME=devdb
       - DB_USER=devuser
       - DB_PASS=changeme
+      - DEBUG=1
 
   db:
     image: postgres:16.1-alpine
@@ -33,3 +35,4 @@ services:
 
 volumes:
   dev-db-data:
+  dev-static-data:
