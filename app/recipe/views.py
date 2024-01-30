@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
+from common.CacheHelper import custom_cache, delete_cache
 from core.models import Recipe, Tag, Ingredient
 from recipe import serializers
 
@@ -35,6 +36,7 @@ from recipe import serializers
 )
 class RecipeViewSet(viewsets.ModelViewSet):
     """View for manage recipe APIs."""
+
     serializer_class = serializers.RecipeDetailSerializer
     queryset = Recipe.objects.all()
     authentication_classes = [TokenAuthentication]
@@ -43,6 +45,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def _params_to_ints(self, qs):
         """Convert a list of strings to integers."""
         return [int(str_id) for str_id in qs.split(',')]
+
 
     def get_queryset(self):
         """Retrieve recipes for authenticated user."""
@@ -59,6 +62,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             user=self.request.user
         ).order_by('-id').distinct()
 
+
     def get_serializer_class(self):
         """Return the serializer class for request"""
         if self.action == 'list':
@@ -68,9 +72,40 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return self.serializer_class
 
+
+    # @custom_cache(timeout=600, is_public=False)
+    # def list(self, request, *args, **kwargs):
+    #     queryset = self.filter_queryset(self.get_queryset())
+    #
+    #     page = self.paginate_queryset(queryset)
+    #     if page is not None:
+    #         serializer = self.get_serializer(page, many=True)
+    #         return self.get_paginated_response(serializer.data)
+    #
+    #     # Сериализация данных, если пагинация не используется
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
+
+
+    @custom_cache(timeout=3600, is_public=False)
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+
     def perform_create(self, serializer):
         """Create a new recipe."""
         serializer.save(user=self.request.user)
+
+
+    @delete_cache(is_public=False)
+    def perform_update(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+    @delete_cache(is_public=False)
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+
 
     @action(methods=['POST'], detail=True, url_path='upload-image')
     def upload_image(self, request, pk=None):

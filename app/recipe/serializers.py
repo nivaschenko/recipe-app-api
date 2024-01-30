@@ -76,6 +76,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         """Update a recipe."""
         tags = validated_data.pop('tags', [])
         ingredients = validated_data.pop('ingredients', [])
+        # validated_data.pop('image', [])
 
         if tags is not None:
             instance.tags.clear()

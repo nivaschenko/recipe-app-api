@@ -103,6 +103,16 @@ DATABASES = {
     }
 }
 
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": f"redis://:eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81@redis:6379",
+        "TIMEOUT": os.environ.get("DJANGO_CACHE_TIMEOUT")
+    }
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
