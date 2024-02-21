@@ -1,6 +1,7 @@
 """
 Views for the recipe APIs.
 """
+from django.core.cache import cache
 from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
@@ -13,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 
-from common.CacheHelper import custom_cache, delete_cache
+from common.CacheHelper import custom_cache, delete_cache, create_cache_key
 from core.models import Recipe, Tag, Ingredient
 from recipe import serializers
 
@@ -73,18 +74,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return self.serializer_class
 
 
-    # @custom_cache(timeout=600, is_public=False)
-    # def list(self, request, *args, **kwargs):
-    #     queryset = self.filter_queryset(self.get_queryset())
-    #
-    #     page = self.paginate_queryset(queryset)
-    #     if page is not None:
-    #         serializer = self.get_serializer(page, many=True)
-    #         return self.get_paginated_response(serializer.data)
-    #
-    #     # Сериализация данных, если пагинация не используется
-    #     serializer = self.get_serializer(queryset, many=True)
-    #     return Response(serializer.data)
+    @custom_cache(timeout=60, is_public=False)
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        # Сериализация данных, если пагинация не используется
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
     @custom_cache(timeout=3600, is_public=False)
@@ -114,6 +115,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(recipe, data=request.data)
 
         if serializer.is_valid():
+            try:
+                key = create_cache_key(request, is_public=False)
+                key = key.replace('/upload-image', '')
+                cache.delete(key)
+            except KeyError:
+                ...
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
 
