@@ -19,7 +19,10 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
+from strawberry.django.views import GraphQLView
+
 from core import views as core_views
+from core.schemas.queries import schema
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -30,7 +33,8 @@ urlpatterns = [
         SpectacularSwaggerView.as_view(url_name='schema'),
         name='api-docs'),
     path('api/user/', include('user.urls')),
-    path('api/recipe/', include('recipe.urls'))
+    path('api/recipe/', include('recipe.urls')),
+    path('graphql', GraphQLView.as_view(schema=schema)),
 ]
 
 if settings.DEBUG:
